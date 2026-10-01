@@ -3,6 +3,7 @@ package sql
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -113,6 +114,22 @@ func tokenize(s string) ([]token, error) {
 		switch {
 		case unicode.IsSpace(c):
 			// ignore
+		case strings.HasPrefix(s[i:], "--"):
+			// comment until the end of the line
+			end := strings.IndexByte(s[i:], '\n')
+			if end < 0 {
+				return res, nil
+			}
+			i += end
+			continue
+		case strings.HasPrefix(s[i:], "/*"):
+			// comment until the closing mark, or the end
+			end := strings.Index(s[i+2:], "*/")
+			if end < 0 {
+				return res, nil
+			}
+			i += 2 + end + 2
+			continue
 		case unicode.IsLetter(c) || c == '_':
 			bt, bl := readBareword(s[i:])
 			tnr := tBare
@@ -156,7 +173,13 @@ func tokenize(s string) ([]token, error) {
 				if bl == -1 {
 					return res, fmt.Errorf("no terminating %q found", close)
 				}
-				res = append(res, stoken(tIdentifier, bt))
+				typ := tIdentifier
+				if c == '"' && len(res) > 0 && res[len(res)-1].typ == DEFAULT {
+					// SQLite takes a double quoted string for a string
+					// where there can't be an identifier.
+					typ = tLiteral
+				}
+				res = append(res, stoken(typ, bt))
 				i += bl
 			default:
 				return nil, fmt.Errorf("unexpected char at pos:%d: %q", i, c)
@@ -221,7 +244,9 @@ loop:
 	}
 	if float {
 		f, err := strconv.ParseFloat(s, 64)
-		if err != nil {
+		if err != nil && !math.IsInf(f, 0) {
+			// too large a number is infinity, which SQLite itself writes
+			// as 1e999
 			return token{}, -1
 		}
 		return ftoken(f), len(s)

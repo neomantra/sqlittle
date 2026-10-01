@@ -222,6 +222,9 @@ columnConstraint:
 	DEFAULT signedNumber {
 		$$ = ccDefault($2)
 	} |
+	DEFAULT floatNumber {
+		$$ = ccDefault($2)
+	} |
 	DEFAULT literal {
 		$$ = ccDefault($2)
 	} |

@@ -2,6 +2,7 @@ package sql
 
 import (
 	"errors"
+	"math"
 	"reflect"
 	"testing"
 
@@ -298,6 +299,13 @@ func TestCreateTable(t *testing.T) {
 		"i0 not null default 'foo'":            &ColumnDef{Name: "i0", Default: "foo"},
 		"i0 not null default [foo]":            nil,
 		"i0 STRING DEFAULT NULL":               &ColumnDef{Name: "i0", Type: "STRING", Null: true, Default: nil},
+		"i0 BLOB DEFAULT 1.5":                  &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: float64(1.5)},
+		"i0 BLOB DEFAULT -1.5":                 &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: float64(-1.5)},
+		"i0 BLOB DEFAULT 1e999":                &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: math.Inf(1)},
+		"i0 BLOB DEFAULT \"\"":                 &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: ""},
+		"i0 BLOB DEFAULT \"foo\"":              &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: "foo"},
+		"i0 BLOB DEFAULT 0 -- a comment\n":     &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: int64(0)},
+		"i0 /* a comment */ BLOB DEFAULT 0":    &ColumnDef{Name: "i0", Type: "BLOB", Null: true, Default: int64(0)},
 
 		"integer integer primary key":                      &ColumnDef{Name: "integer", Type: "integer", PrimaryKey: true, PrimaryKeyDir: Asc, Null: true},
 		"ROWID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE":   &ColumnDef{Name: "ROWID", Type: "INTEGER", PrimaryKey: true, Unique: true, AutoIncrement: true, Null: true},
