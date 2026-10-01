@@ -219,3 +219,11 @@ func TestRecord(t *testing.T) {
 		ErrCorrupted,
 	)
 }
+
+func TestRecordCorrupt(t *testing.T) {
+	// a type which doesn't fit 63 bits must not be taken for a length
+	header := []byte{11, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01}
+	if _, err := parseRecord(append(header, "some bytes"...)); err != ErrCorrupted {
+		t.Errorf("have %v, want %v", err, ErrCorrupted)
+	}
+}

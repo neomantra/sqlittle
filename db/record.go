@@ -90,6 +90,9 @@ func parseRecord(r []byte) (Record, error) {
 			// internal types. Should not happen.
 			return nil, errInternal
 		default:
+			if c < 0 {
+				return res, ErrCorrupted
+			}
 			if c&1 == 0 {
 				// even, blob
 				l := (c - 12) / 2
