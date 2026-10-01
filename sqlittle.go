@@ -23,6 +23,18 @@ func Open(filename string) (*DB, error) {
 	}, nil
 }
 
+// OpenBytes opens a sqlite database which is already in memory. The bytes must
+// not change while the database is in use.
+func OpenBytes(b []byte) (*DB, error) {
+	db, err := sdb.OpenBytes(b)
+	if err != nil {
+		return nil, err
+	}
+	return &DB{
+		db: db,
+	}, nil
+}
+
 // Close the database file
 func (db *DB) Close() error {
 	return db.db.Close()

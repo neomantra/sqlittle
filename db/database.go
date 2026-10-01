@@ -74,6 +74,14 @@ func OpenFile(f string) (*Database, error) {
 	return newDatabase(l, f+"-journal")
 }
 
+// OpenBytes opens a database which is already in memory, such as an embedded
+// file or one read from a stream. The bytes must not change while the database
+// is in use. There is no journal to consider, and no locking.
+// Use database.Close() when done.
+func OpenBytes(b []byte) (*Database, error) {
+	return newDatabase(&memPager{b: b}, "")
+}
+
 func newDatabase(l pager, journal string) (*Database, error) {
 	d := &Database{
 		journal:    journal,

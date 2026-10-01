@@ -1,4 +1,5 @@
-// +build !windows
+//go:build !windows && !js && !wasip1
+// +build !windows,!js,!wasip1
 
 // unix implementation of the `pager` interface (the file reader) with POSIX
 // advisory locking

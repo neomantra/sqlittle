@@ -65,6 +65,13 @@ SQLittle has a read-lock on the file during the whole execution of the
 select-like functions. It's safe to update the database using SQLite while the
 file is opened in SQLittle.
 
+## In memory
+`sqlittle.OpenBytes()` (and `db.OpenBytes()`) read a database which is already
+in memory: an embedded file, or one which came over the network. There are no
+locks and no journal, so the bytes shouldn't change while they're in use. This
+is also the only way to open a database on platforms without file locking,
+such as `GOOS=js`.
+
 ## Status
 The current level of abstraction is likely the final one (that is: deal
 with reading single tables; don't even try joins or SQL or query planning), but
