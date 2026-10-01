@@ -5,6 +5,7 @@ package ci
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	sdb "github.com/neomantra/sqlittle/db"
@@ -93,8 +94,9 @@ func TestLockWrite(t *testing.T) {
 	// insert via sqlite should fail with SQLITE_BUSY (5)
 	if _, err := sqlite(file, `INSERT INTO number VALUES ("one")`); err == nil {
 		t.Fatal("expected an error")
-	} else if have, want := err.Error(), "exit status 5: Error: database is locked\n"; have != want {
-		t.Fatalf("have %#v, want %#v", have, want)
+	} else if have := err.Error(); !strings.HasPrefix(have, "exit status 5: ") || !strings.Contains(have, "database is locked") {
+		// the exact message depends on the sqlite3 CLI version
+		t.Fatalf("have %#v, want SQLITE_BUSY (5)", have)
 	}
 
 	if err := little.RUnlock(); err != nil {
