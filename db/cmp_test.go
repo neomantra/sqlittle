@@ -98,11 +98,11 @@ func TestSearch(t *testing.T) {
 	)
 }
 
-func Testcompare(t *testing.T) {
+func TestCompare(t *testing.T) {
 	test := func(a interface{}, b interface{}, want int) {
 		t.Helper()
 
-		if have, want := compare(a, b, CollateFuncs[""]), want; have != want {
+		if have, want := compare(a, b, CollateFuncs["binary"]), want; have != want {
 			t.Errorf("have %d, want %d", have, want)
 		}
 	}

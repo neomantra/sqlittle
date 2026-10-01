@@ -258,7 +258,7 @@ func TestIONoSuch(t *testing.T) {
 
 func TestIOZero(t *testing.T) {
 	_, err := OpenFile("./../testdata/zerolength.sqlite")
-	if have, want := err, errors.New("mmap: closed"); !reflect.DeepEqual(have, want) {
+	if have, want := err, io.EOF; have != want {
 		t.Errorf("have %#v, want %#v", have, want)
 	}
 }
