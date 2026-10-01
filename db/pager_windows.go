@@ -134,11 +134,16 @@ func (f *filePager) RUnlock() error {
 // True if there is a 'reserved' lock on the database, by any process.
 func (f *filePager) CheckReservedLock() (bool, error) {
 	// per SQLite's winCheckReservedLock()
+	// If we can take the lock then nobody else holds it.
 	err := f.lock(sqliteReservedByte, 1)
 	if err == nil {
 		f.unlock(sqliteReservedByte, 1)
+		return false, nil
 	}
-	return err == nil, err
+	if errors.Is(err, windows.ERROR_LOCK_VIOLATION) {
+		return true, nil
+	}
+	return false, err
 }
 
 func (f *filePager) Close() error {
