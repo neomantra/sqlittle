@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	sdb "github.com/alicebob/sqlittle/db"
+	sdb "github.com/neomantra/sqlittle/db"
 )
 
 type columnIndex struct {

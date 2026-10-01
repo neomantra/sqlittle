@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	sdb "github.com/alicebob/sqlittle/db"
+	sdb "github.com/neomantra/sqlittle/db"
 )
 
 func TestJournal(t *testing.T) {
