@@ -10,6 +10,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -35,6 +36,8 @@ type filePager struct {
 	f     *os.File
 	mm    *mmap.ReaderAt
 	state LockState
+	// the single byte in the shared range we hold while read-locked
+	sharedByte uint32
 }
 
 func newFilePager(file string) (*filePager, error) {
@@ -86,9 +89,9 @@ func (f *filePager) RLock() error {
 	// copy this retry logic.  It is a hack intended for Windows only.
 	//
 	// source: https://github.com/sqlite/sqlite/blob/c398c65bee850b6b8f24a44852872a27f114535d/src/os_win.c#L3280
+	var err error
 	for i := 0; i < 3; i++ {
-		err := f.lock(sqlitePendingByte, 1)
-		if err == nil {
+		if err = f.lock(sqlitePendingByte, 1); err == nil {
 			break
 		}
 		if errors.Is(err, windows.ERROR_INVALID_HANDLE) {
@@ -96,16 +99,23 @@ func (f *filePager) RLock() error {
 		}
 		time.Sleep(time.Microsecond)
 	}
+	if err != nil {
+		return err
+	}
 
 	defer func() {
 		// - drop the pending lock. No idea what to do with the error :/
 		f.unlock(sqlitePendingByte, 1)
 	}()
 
-	// Get the read-lock
-	if err := f.lock(sqliteSharedFirst, sqliteSharedSize); err != nil {
+	// Get the read-lock: like SQLite we lock one random byte in the shared
+	// range, so readers don't conflict with each other. Writers lock the
+	// whole range.
+	b := sqliteSharedFirst + uint32(rand.Intn(sqliteSharedSize-1))
+	if err := f.lock(b, 1); err != nil {
 		return err
 	}
+	f.sharedByte = b
 	f.state = Locked
 	return nil
 }
@@ -114,7 +124,7 @@ func (f *filePager) RUnlock() error {
 	if f.state == Unlocked {
 		return errors.New("trying to unlock an unlocked lock") // panic?
 	}
-	if err := f.unlock(sqliteSharedFirst, sqliteSharedSize); err != nil {
+	if err := f.unlock(f.sharedByte, 1); err != nil {
 		return err
 	}
 	f.state = Unlocked
