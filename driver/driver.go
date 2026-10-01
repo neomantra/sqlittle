@@ -100,8 +100,6 @@ func (st *Statement) Query([]driver.Value) (driver.Rows, error) {
 }
 
 func (st *Statement) QueryContext(ctx context.Context, v []driver.NamedValue) (driver.Rows, error) {
-	ctx, cancel := context.WithCancel(ctx)
-
 	stmt, err := sqsql.Parse(st.SQL)
 	if err != nil {
 		return nil, err
@@ -117,6 +115,7 @@ func (st *Statement) QueryContext(ctx context.Context, v []driver.NamedValue) (d
 		return nil, err
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
 	rows := &Rows{
 		columns: cols,
 		rows:    make(chan sqlittle.Row),

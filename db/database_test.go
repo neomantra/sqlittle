@@ -128,7 +128,9 @@ func TestHeader(t *testing.T) {
 	test(
 		// test #7
 		func(h [headerSize]byte) [headerSize]byte {
-			h[20] = 0x10
+			// usable size would be below 480
+			h[16], h[17] = 0x02, 0x00 // 512 byte pages
+			h[20] = 0x40
 			return h
 		},
 		nil,

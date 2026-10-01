@@ -42,6 +42,10 @@ func addOverflow(db *Database, pl cellPayload) ([]byte, error) {
 			return nil, ErrCorrupted
 		}
 		next, buf := int(binary.BigEndian.Uint32(buf[:4])), buf[4:]
+		if used := db.header.PageSize - db.header.Reserved - 4; len(buf) > used {
+			// don't read the reserved space at the end of the page
+			buf = buf[:used]
+		}
 		to = append(to, buf...)
 		overflow = next
 	}

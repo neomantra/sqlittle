@@ -21,7 +21,7 @@ var (
 	// Various error messages returned when the database is corrupted
 	ErrInvalidMagic    = errors.New("invalid magic number")
 	ErrInvalidPageSize = errors.New("invalid page size")
-	ErrReservedSpace   = errors.New("unsupported database (encrypted?)")
+	ErrReservedSpace   = errors.New("invalid reserved space")
 	ErrCorrupted       = errors.New("database corrupted")
 	ErrInvalidDef      = errors.New("invalid object definition")
 	ErrRecursion       = errors.New("tree is too deep")
@@ -44,6 +44,9 @@ var (
 type header struct {
 	// The database page size in bytes.
 	PageSize int
+	// Bytes at the end of each page not used by SQLite's b-trees (the
+	// "reserved space" in the header). Usually 0.
+	Reserved int
 	// Updated when anything changes (only for non-WAL files).
 	ChangeCounter uint32
 	// Updated when any table definition changes
@@ -177,8 +180,10 @@ func parseHeader(b []byte) (header, error) {
 		return h, ErrIncompatible
 	}
 
-	if int(hs.ReservedSpace) != 0 {
-		return h, ErrReservedSpace
+	h.Reserved = int(hs.ReservedSpace)
+	if h.PageSize-h.Reserved < 480 {
+		// the spec requires a usable size of at least 480 bytes
+		return header{}, ErrReservedSpace
 	}
 
 	if hs.MaxFraction != 64 ||
@@ -359,7 +364,7 @@ func (db *Database) openPage(page int) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := newBtree(buf, page == 1, db.header.PageSize)
+	p, err := newBtree(buf, page == 1, db.header.PageSize-db.header.Reserved)
 	if err == nil {
 		db.btreeCache.set(page, p)
 	}
