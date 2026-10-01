@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"io"
+	"io/fs"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -253,8 +254,9 @@ func TestIOBasic(t *testing.T) {
 
 func TestIONoSuch(t *testing.T) {
 	_, err := OpenFile("./../testdata/nosuch.sqlite")
-	if have, want := err.Error(), "open ./../testdata/nosuch.sqlite: no such file or directory"; have != want {
-		t.Errorf("have %#v, want %#v", have, want)
+	// the message differs per OS
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("have %#v, want fs.ErrNotExist", err)
 	}
 }
 
